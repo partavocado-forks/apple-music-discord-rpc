@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "music-rpc.ts"
+      - "discord.ts"
+      - "jxa.ts"
+      - "scripts/**"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build tarball
+        id: build
+        run: |
+          version="$(date -u +%Y.%m.%d)-${GITHUB_RUN_NUMBER}"
+          name="apple-music-discord-rpc-${version}"
+          git archive --format=tar.gz --prefix="${name}/" -o "${name}.tar.gz" HEAD \
+            music-rpc.ts discord.ts jxa.ts scripts LICENSE README.md
+          sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256"
+          tar -tzvf "${name}.tar.gz"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(cut -d' ' -f1 "${name}.tar.gz.sha256")" >> "$GITHUB_OUTPUT"
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.build.outputs.version }}
+          NAME: ${{ steps.build.outputs.name }}
+          SHA256: ${{ steps.build.outputs.sha256 }}
+        run: |
+          gh release create "v${VERSION}" \
+            --target "${GITHUB_SHA}" \
+            --title "v${VERSION}" \
+            --notes "Built from ${GITHUB_SHA}.
+
+          SHA-256 of \`${NAME}.tar.gz\`: \`${SHA256}\`" \
+            "${NAME}.tar.gz" "${NAME}.tar.gz.sha256"
