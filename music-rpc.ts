@@ -3,7 +3,7 @@ import { Activity, ActivityType, Client } from "./discord.ts";
 import { run } from "./jxa.ts";
 
 // Discord only accepts public https URLs for assets, so this must stay hosted.
-const FALLBACK_ARTWORK_URL = "https://cdn.jameslin.info/tap/reserve.png";
+const FALLBACK_ARTWORK_URL = "https://cdn.partavocado.cc/tap/reserve.png";
 const FALLBACK_RETRY_MS = 5 * 60 * 1000;
 
 //#region RPC
